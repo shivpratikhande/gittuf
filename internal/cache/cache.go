@@ -85,7 +85,8 @@ func (p *Persistent) Commit(repo *gitinterface.Repository) error {
 
 // PopulatePersistentCache scans the repository's RSL and generates a persistent
 // local-only cache of policy and attestation entries. This makes subsequent
-// verifications faster.
+// verifications faster. This is currently only available in gittuf's developer
+// mode.
 func PopulatePersistentCache(repo *gitinterface.Repository) error {
 	persistent := &Persistent{
 		PolicyEntries:      []RSLEntryIndex{},
@@ -177,6 +178,19 @@ func LoadPersistentCache(repo *gitinterface.Repository) (*Persistent, error) {
 
 	slog.Debug("Loaded persistent cache")
 	return persistentCache, nil
+}
+
+// ResetPersistentCache deletes the local persistent cache ref.
+// This is useful when the cache is corrupted or the user wants a fresh start.
+func ResetPersistentCache(repo *gitinterface.Repository) error {
+	err := repo.DeleteReference(Ref)
+	if err != nil {
+		if errors.Is(err, gitinterface.ErrReferenceNotFound) {
+			return nil
+		}
+		return err
+	}
+	return nil
 }
 
 // RSLEntryIndex is essentially a tuple that maps RSL entry IDs to numbers. This
